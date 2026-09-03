@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Access Code — {{ title or "CCChatShare" }}{% endblock %}
+{% block content %}
+<div class="cc-narrow" style="padding: 20px 0 60px;">
+  <div class="tac" style="margin-bottom: 18px;">
+    <div class="kicker">Sealed Dispatch</div>
+    <h1 style="font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 6px 0;">
+      {{ title if title else "This conversation is locked" }}
+    </h1>
+    <p class="dek">Enter the access code you were given to read it.</p>
+  </div>
+
+  <div class="rule-double"></div>
+
+  <form class="box" method="post" action="{{ url_for('public.unlock_chat', slug=slug) }}" style="padding: 28px; position: relative;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="stamp" style="position: absolute; top: 14px; right: 18px;">SEALED</div>
+    <label for="access_code">Access Code</label>
+    <input
+      class="cc-code-input"
+      type="text"
+      id="access_code"
+      name="access_code"
+      autocomplete="off"
+      autocapitalize="characters"
+      spellcheck="false"
+      maxlength="8"
+      required
+      autofocus
+    >
+    {% if error %}
+      <div class="cc-error">&#10007; {{ error }}</div>
+    {% endif %}
+    <div class="tac" style="margin-top: 24px;">
+      <button type="submit" class="btn">Unseal</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

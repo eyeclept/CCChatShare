@@ -1,0 +1,30 @@
+[Unit]
+Description=CCChatShare Flask app
+After=network-online.target
+
+[Container]
+Image=localhost/ccchatshare:latest
+ContainerName=ccchatshare
+# Loopback only. The tunnel (cloudflared, on this same host) is the sole
+# ingress. Publishing to 0.0.0.0 served the whole app, including
+# /api/chats, in plaintext to anything that could route a packet to
+# this VM. That path bypassed Cloudflare (found in the security audit).
+PublishPort=127.0.0.1:8080:8080
+# :U remaps the bind-mounted host directory ownership to match the
+# UserNS mapping below. The container uid 1000 then keeps working
+# without also being the host eyeclept account.
+Volume=/opt/ccchatshare/data:/data:Z,U
+# Without this, the container uid 1000 is the host eyeclept account
+# (which has passwordless sudo). A container-escape bug would then be
+# a direct path to full VM root. UserNS=auto maps it into eyeclept's
+# unused subuid range. Container processes then own nothing and can
+# sudo nothing on the host even if they escape the container.
+UserNS=auto
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

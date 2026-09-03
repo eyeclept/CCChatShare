@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Not Found — CCChatShare{% endblock %}
+{% block content %}
+<div class="cc-narrow tac" style="padding: 60px 0;">
+  <div class="kicker">Stop the Presses</div>
+  <h1 style="font-size: clamp(2.4rem, 6vw, 4rem); margin: 10px 0;">404</h1>
+  <hr class="rule-thin">
+  <p class="dek" style="margin-top: 16px;">{{ message }}</p>
+  <p style="margin-top: 20px;"><a class="scratch" href="{{ url_for('public.index') }}">Return to the front page</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<article class="cc-article" style="padding: 10px 0 40px;">
+  <div class="tac" style="margin-bottom: 24px;">
+    <div class="kicker">Claude Conversation</div>
+    <h1 style="margin: 8px 0;">{{ title }}</h1>
+  </div>
+  <hr class="rule-double">
+  <div class="body-html" style="margin-top: 24px;">
+    {{ body_html | safe }}
+  </div>
+  {% if has_tools %}
+  <hr class="rule-thin" style="margin-top: 40px;">
+  <div class="cc-tools-link">
+    <a class="scratch" href="{{ url_for('public.view_tools', slug=slug) }}">View tool calls &amp; results &rarr;</a>
+  </div>
+  {% endif %}
+</article>
+{% endblock %}

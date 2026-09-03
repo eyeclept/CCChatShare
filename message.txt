@@ -1,0 +1,33 @@
+CCChatShare is a Flask application. The application shares chat exports. Conversations are in a sqlite database. The database uses write-ahead logging. Access codes are hashed. Unlocking a chat mints a signed per-chat authentication cookie. This design means access to one shared chat does not imply access to another chat.
+
+Unlock attempts are rate-limited to five per five minutes. The limiter is keyed per (IP, slug). Exceeding the limit triggers a lockout. Chat content is rendered through sanitized markdown.
+
+A newspaper-styled template set provides views. The views are unlock, chat, and error views.
+
+You can push commands through an admin API. The API is POST /api/chats. It uses a bearer token. You can push commands through a Textual-based admin TUI. The file is admin_tui.py. The TUI lists chats. The TUI regenerates chats. The TUI revokes chats. The TUI deletes chats.
+
+The project ships as a non-root Podman container. The container runs a single-worker gunicorn process. The project includes first-boot secret generation. The project includes a systemd quadlet unit.
+
+The service is reachable over HTTPS now. The service uses a Cloudflare Tunnel. The URL is chatshare.blue-bly.com. Cloudflare terminates TLS at the edge.
+
+Every push is scanned server-side now. The file is app/secrets_scan.py. The scan redacts content before it is persisted. The response exposes a `secrets_redacted` flag.
+
+A security audit prompted a round of hardening. The rate limiter keys on the `Cf-Connecting-Ip` header. The limiter keys on the header instead of the loopback address behind the proxy. Lockout accounting deducts only on failures. The cookie gained the Secure flag. The cookie gained a scoped Path. The cookie is bound to the access-code hash. The cookie is bound to the token version.
+
+The project sets CSP, X-Frame-Options, Referrer-Policy, and X-Content-Type-Options. It uses an after_request hook. The audit closed pre-auth leakage of chat titles. The audit closed chat-route content presence timing distinctions. The audit closed timing distinctions between revoked and missing chats.
+
+POST /api/chats enforces size caps now. The endpoint enforces rate limiting. The endpoint enforces type validation. The admin TUI does not crash on Rich markup in titles. The admin TUI does not crash on empty-table actions. SQLite files are restricted to 0600/0700. The container runs under a user namespace. Werkzeug and gunicorn are bumped past two published CVEs.
+
+Comments and docstrings are audited against the code. Documentation is consolidated now. The files are README.md, SETUP.md, and STATE_OF_THE_PROGRAM.md. The project retains design and architecture docs. The DesignDoc.md file is retained where it exists.
+
+The project regenerates graphify-out/. The project adds Assist/SectionMap.md. The file describes section boundaries for future task dispatch.
+
+A follow-up security audit closed additional findings. Unlock requests are protected against CSRF now. The protection uses a stateless double-submit token. The token is minted into the form. The token is paired with a `cc_csrf` cookie. The cookie is HttpOnly. The cookie is SameSite=Strict. The cookie is Secure. The cookie is scoped to the chat path. The cookie is compared with hmac.compare_digest. Lockout deducts only on a 200 response now.
+
+The project adds Strict-Transport-Security to every response. The project omits preload. The default database host is now 127.0.0.1. Database files and their WAL/SHM siblings are chmod'd to 0600. The parent directory is chmod'd to 0700.
+
+Markdown is upgraded to 3.8.1. bleach is upgraded to 6.4.0. These upgrades address published vulnerabilities. render_markdown logs the failure now. The function degrades to escaped text in a `<pre>`. The function does not raise.
+
+push_chat scans the chat title now. The tool scans the title in addition to the body. The secrets scanner fails closed now. The scanner returns HTTP 503 when a scan fails. The scanner creates no row when a scan fails.
+
+The admin TUI revoke toggle does not raise NameError now. README.md and SETUP.md do not document a /tmp database path now. The external export_chat.py push tool refuses redirects now.

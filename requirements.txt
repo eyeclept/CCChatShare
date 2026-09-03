@@ -1,0 +1,9 @@
+Flask==3.0.3
+Flask-Limiter==3.8.0
+itsdangerous==2.2.0
+Werkzeug==3.0.6
+gunicorn==23.0.0
+Markdown==3.8.1
+bleach==6.4.0
+textual==0.79.1
+detect-secrets==1.5.0

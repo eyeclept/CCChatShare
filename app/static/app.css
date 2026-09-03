@@ -1,0 +1,89 @@
+/* ============================================================
+   CCChatShare app-specific additions on top of newspaper.css.
+   Tokens and classes from the newspaper framework stay as they are.
+   This file holds only the additions this app needs.
+   ============================================================ */
+
+.cc-masthead {
+  text-align: center;
+  padding: 20px 0 10px;
+  border-bottom: 4px solid var(--ink);
+  margin-bottom: 28px;
+}
+.cc-masthead .title {
+  font-family: var(--display);
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  margin: 4px 0;
+}
+.cc-masthead .motto {
+  font-family: var(--subhead);
+  font-style: italic;
+  color: var(--ink-mid);
+  font-size: 0.95rem;
+}
+.cc-masthead a { border: 0; }
+
+.cc-narrow {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.cc-article {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.cc-article .body-html h1,
+.cc-article .body-html h2,
+.cc-article .body-html h3 { margin-top: 1.4em; }
+.cc-article .body-html pre {
+  background: var(--paper-deep);
+  border: 1px solid var(--ink-faded);
+  padding: 12px;
+  overflow-x: auto;
+  font-family: var(--typewriter);
+  font-size: 0.85rem;
+}
+.cc-article .body-html code {
+  font-family: var(--typewriter);
+  font-size: 0.9em;
+}
+.cc-article .body-html blockquote {
+  border-left: 3px solid var(--ink-faded);
+  margin: 0 0 1em;
+  padding: 2px 0 2px 16px;
+  color: var(--ink-mid);
+  font-style: italic;
+}
+.cc-article .body-html table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+.cc-article .body-html th,
+.cc-article .body-html td {
+  border: 1px solid var(--ink-faded);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.cc-code-input {
+  font-family: var(--typewriter);
+  font-size: 1.6rem;
+  letter-spacing: 0.4em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cc-error {
+  font-family: var(--typewriter);
+  color: #8b1d1d;
+  font-size: 0.85rem;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.cc-tools-link {
+  display: block;
+  text-align: center;
+  margin-top: 40px;
+}
