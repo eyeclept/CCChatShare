@@ -1,33 +1,49 @@
-CCChatShare is a Flask application. The application shares chat exports. Conversations are in a sqlite database. The database uses write-ahead logging. Access codes are hashed. Unlocking a chat mints a signed per-chat authentication cookie. This design means access to one shared chat does not imply access to another chat.
+Security audit: 7 passes, fix all 16 real findings
 
-Unlock attempts are rate-limited to five per five minutes. The limiter is keyed per (IP, slug). Exceeding the limit triggers a lockout. Chat content is rendered through sanitized markdown.
+Ran the 7-pass security audit from StatesOfProjects/todo/CCChatShare-AUDIT-security.md
+across all 13 sections. 36 findings: all 17 baseline security ids resolved with a
+disposition, plus 19 new findings no tool reported. 16 disposed real, all fixed here.
+Nothing rated P0 or P1.
 
-A newspaper-styled template set provides views. The views are unlock, chat, and error views.
+Fixes:
 
-You can push commands through an admin API. The API is POST /api/chats. It uses a bearer token. You can push commands through a Textual-based admin TUI. The file is admin_tui.py. The TUI lists chats. The TUI regenerates chats. The TUI revokes chats. The TUI deletes chats.
+- CSRF on POST /c/<slug>/unlock. A cross-site page could set a visitor's unlock
+  cookie and burn their 5-per-5-minutes lockout budget for that share link. Added a
+  stateless double-submit token: _render_unlock mints it into the form and a cc_csrf
+  cookie (HttpOnly, SameSite=Strict, Secure, Path=/c/<slug>), and unlock_chat compares
+  the pair with hmac.compare_digest before touching the db or the access code.
+  deduct_when narrowed from != 302 to == 200 so a CSRF 400 or a 404 cannot spend a
+  lockout slot. Standard library only, no new dependency.
+- Strict-Transport-Security on every response. preload omitted deliberately: this host
+  is one subdomain of a wider domain.
+- CCCHATSHARE_HOST defaults to 127.0.0.1. Production is unaffected; the container
+  entrypoint passes gunicorn its own --bind and the quadlet publishes loopback only.
+- connect() chmods the sqlite file and its WAL/SHM siblings to 0600 and the parent dir
+  to 0700, skipping a sticky directory so a /tmp path cannot lock other users out.
+  A chmod failure warns and continues for read-only bind mounts.
+- Markdown 3.6 -> 3.8.1 (PYSEC-2026-89, unhandled AssertionError on malformed
+  HTML-like sequences) and bleach 6.1.0 -> 6.4.0 (GHSA-8rfp-98v4-mmr6, disallowed URI
+  schemes above U+00A0). Both reachable on every GET /c/<slug>.
+- render_markdown logs and degrades to html.escape'd text in a <pre> instead of 500ing
+  a view over already-stored content. Escape is outside bleach, which may be the
+  failing call.
+- push_chat scans the title, not just the body. One cause behind three sinks: page
+  heading, browser tab title, admin TUI table.
+- The secrets scanner fails closed. _quoted_pass_hits raised no distinction between
+  "clean" and "crashed", so a transient failure published an unredacted body. It now
+  raises SecretsScanError and push_chat returns 503 with no row created.
+- admin_tui action_toggle_revoke referenced an unassigned status_str, so every
+  successful revoke raised NameError past the sqlite handler and crashed the TUI.
+- README.md and SETUP.md stop documenting a /tmp database path.
 
-The project ships as a non-root Podman container. The container runs a single-worker gunicorn process. The project includes first-boot secret generation. The project includes a systemd quadlet unit.
+Deferred, none disposed real, reasoning in the ledger: Flask and Werkzeug bumps
+(advisories unreachable here, minor-bump regression risk), Containerfile digest
+pinning, the local-only admin TUI identity check, and the in-container 0.0.0.0 bind.
 
-The service is reachable over HTTPS now. The service uses a Cloudflare Tunnel. The URL is chatshare.blue-bly.com. Cloudflare terminates TLS at the edge.
+Verified: 60 tests pass; 25/25 live smoke checks against local gunicorn and again
+against the deployed VM; all 18 stored chats re-render clean under the new pins; the
+admin TUI revoke toggle driven headlessly with textual run_test.
 
-Every push is scanned server-side now. The file is app/secrets_scan.py. The scan redacts content before it is persisted. The response exposes a `secrets_redacted` flag.
-
-A security audit prompted a round of hardening. The rate limiter keys on the `Cf-Connecting-Ip` header. The limiter keys on the header instead of the loopback address behind the proxy. Lockout accounting deducts only on failures. The cookie gained the Secure flag. The cookie gained a scoped Path. The cookie is bound to the access-code hash. The cookie is bound to the token version.
-
-The project sets CSP, X-Frame-Options, Referrer-Policy, and X-Content-Type-Options. It uses an after_request hook. The audit closed pre-auth leakage of chat titles. The audit closed chat-route content presence timing distinctions. The audit closed timing distinctions between revoked and missing chats.
-
-POST /api/chats enforces size caps now. The endpoint enforces rate limiting. The endpoint enforces type validation. The admin TUI does not crash on Rich markup in titles. The admin TUI does not crash on empty-table actions. SQLite files are restricted to 0600/0700. The container runs under a user namespace. Werkzeug and gunicorn are bumped past two published CVEs.
-
-Comments and docstrings are audited against the code. Documentation is consolidated now. The files are README.md, SETUP.md, and STATE_OF_THE_PROGRAM.md. The project retains design and architecture docs. The DesignDoc.md file is retained where it exists.
-
-The project regenerates graphify-out/. The project adds Assist/SectionMap.md. The file describes section boundaries for future task dispatch.
-
-A follow-up security audit closed additional findings. Unlock requests are protected against CSRF now. The protection uses a stateless double-submit token. The token is minted into the form. The token is paired with a `cc_csrf` cookie. The cookie is HttpOnly. The cookie is SameSite=Strict. The cookie is Secure. The cookie is scoped to the chat path. The cookie is compared with hmac.compare_digest. Lockout deducts only on a 200 response now.
-
-The project adds Strict-Transport-Security to every response. The project omits preload. The default database host is now 127.0.0.1. Database files and their WAL/SHM siblings are chmod'd to 0600. The parent directory is chmod'd to 0700.
-
-Markdown is upgraded to 3.8.1. bleach is upgraded to 6.4.0. These upgrades address published vulnerabilities. render_markdown logs the failure now. The function degrades to escaped text in a `<pre>`. The function does not raise.
-
-push_chat scans the chat title now. The tool scans the title in addition to the body. The secrets scanner fails closed now. The scanner returns HTTP 503 when a scan fails. The scanner creates no row when a scan fails.
-
-The admin TUI revoke toggle does not raise NameError now. README.md and SETUP.md do not document a /tmp database path now. The external export_chat.py push tool refuses redirects now.
+Artifacts: Assist/audit/security-findings.md (human ledger, all findings and every
+pass checklist answer), StatesOfProjects/reports/audit/CCChatShare-security.json
+(machine ledger), Assist/HANDOVER_security_audit.md.

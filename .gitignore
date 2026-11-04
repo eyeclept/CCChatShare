@@ -68,3 +68,4 @@ chat_export_*.md
 *.db
 secrets.env
 .env
+message.txt
